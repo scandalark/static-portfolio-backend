@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 8080;
 app.use(cors());
 
 app.get('/gateway', async (req, res) => {
-    const targetUrl = req.query.url;
+    let targetUrl = req.query.url;
     if (!targetUrl) {
         return res.status(400).send('Error: Missing target url query parameter.');
     }
@@ -19,10 +19,18 @@ app.get('/gateway', async (req, res) => {
             responseType: 'text'
         });
 
+        let htmlContent = response.data;
+        
+        const urlObj = new URL(targetUrl);
+        const originUrl = urlObj.origin;
+
+        const baseTag = `<head><base href="${originUrl}/">`;
+        htmlContent = htmlContent.replace('<head>', baseTag);
+
         res.removeHeader('X-Frame-Options');
         res.removeHeader('Content-Security-Policy');
         
-        res.send(response.data);
+        res.send(htmlContent);
     } catch (error) {
         res.status(500).send(`Gateway connection timeout mapping: ${error.message}`);
     }
